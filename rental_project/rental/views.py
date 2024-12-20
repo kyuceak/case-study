@@ -1,35 +1,21 @@
 from django.shortcuts import render, redirect
-from django.contrib.auth.forms import UserCreationForm
-from django import forms
-from .models import Team, Personnel
+from .models import Personnel
 from django.contrib.auth.models import User
 from django.http import HttpResponseRedirect
 from django.contrib import messages
-from django.contrib.auth import authenticate, login as authenticated_login
+from django.contrib.auth import authenticate, login as authenticated_login, logout
+from django.contrib.auth.decorators import login_required
+from .forms import RegisterForm, LoginForm
 
 
 # Create your views here.
 
 
-
-def index(request):
-    context = {}
-    return render(request, "rental/index.html")
-
-
-# extending UserCreationForm to add team dropdown field
-class register_form(forms.ModelForm):
-    team = forms.ModelChoiceField(queryset=Team.objects.all(), required=True)
-    password = forms.CharField(widget=forms.PasswordInput)
-
-    class Meta:
-        model = User
-        fields = ('username', 'password', 'team')
-
+########### LOGIN SCREEN VIEWS
 
 def register(request):
     if request.method == 'POST':
-        form = register_form(request.POST)
+        form = RegisterForm(request.POST)
         if form.is_valid():
             # Create the user
             user = User.objects.create_user(
@@ -44,20 +30,15 @@ def register(request):
             # Log in the user
             messages.success(request, "Your account has been created. Please log in.")
             return HttpResponseRedirect("/login")
+        else:
+            print(form.errors)
     else:
-        form = register_form()
+        form = RegisterForm()
 
     context = {'form': form}
     return render(request, "rental/register.html", context)
 
-class LoginForm(forms.Form):
-    username = forms.CharField(
-        max_length=150,
-        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "Username"}),
-    )
-    password = forms.CharField(
-        widget=forms.PasswordInput(attrs={"class": "form-control", "placeholder": "Password"}),
-    )
+
 
 
 def login(request):
@@ -72,7 +53,7 @@ def login(request):
 
             if user is not None:
                 authenticated_login(request,user)
-                return HttpResponseRedirect("")
+                return index(request) # open main page after login
             else:
                 messages.error(request, "Invalid username or password")
 
@@ -82,3 +63,34 @@ def login(request):
     context = {'form':form}
     return render(request, "rental/login.html", context)
 
+########### MAIN SCREENS
+
+@login_required(login_url="/login")
+def index(request):
+
+    
+    context = {'user': request.user}
+    return render(request, "rental/index.html", context)
+
+
+
+@login_required(login_url="/login")
+def create_parts(request):
+    pass
+
+@login_required(login_url="/login")
+def list_parts(request):
+    pass
+
+@login_required(login_url="/login")
+def create_aircrafts(request):
+    pass
+
+@login_required(login_url="/login")
+def list_aircrafts(request):
+    pass
+
+@login_required(login_url="/login")
+def logout_view(request):
+    logout(request)
+    return HttpResponseRedirect("/login")

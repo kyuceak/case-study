@@ -1,0 +1,22 @@
+<nav class="bg-gray-800 text-white shadow-md">
+    <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+        <!-- Brand -->
+        <div>
+            <a href="{% url 'index' %}" class="text-lg font-bold hover:text-blue-400">Aircraft Management</a>
+        </div>
+
+        <!-- Navigation Links -->
+        <div class="flex space-x-6">
+            <!-- CRUD Parts -->
+            <a href="{% url 'create-part' %}" class="hover:text-blue-400">Create Part</a>
+            <a href="{% url 'list-part' %}" class="hover:text-blue-400">List Parts</a>
+
+            <!-- Assembly -->
+            <a href="{% url 'create-aircraft' %}" class="hover:text-blue-400">Assemble Aircraft</a>
+            <a href="{% url 'list-aircraft' %}" class="hover:text-blue-400">List Aircraft</a>
+
+            <!-- Logout -->
+            <a href="{% url 'logout' %}" class="hover:text-red-400">Logout</a>
+        </div>
+    </div>
+</nav>
