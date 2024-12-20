@@ -78,7 +78,7 @@ def index(request):
 
     
     context = {'user': request.user}
-    return render(request, "rental/index.html", context)
+    return HttpResponseRedirect("/create-parts")
 
 
 
@@ -148,11 +148,16 @@ class PartDetailAPIView(RetrieveUpdateDestroyAPIView):
     queryset = Part.objects.all()
     serializer_class = PartSerializer
     permission_classes = [IsAuthenticated]
-    
+
+    def get_object(self):
+        # Always return the object regardless of team
+        return get_object_or_404(Part, pk=self.kwargs['pk'])
+
     def get_queryset(self):
         # to ensure users only get parts belonging to their team
         team = self.request.user.personnel.team
         return Part.objects.filter(team=team)
+
 
 
 
