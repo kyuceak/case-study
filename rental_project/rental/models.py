@@ -4,9 +4,16 @@ from django.contrib.auth.models import User
 # Create your models here.
 class Team(models.Model):
     name = models.CharField(max_length=100)
+    responsible = models.CharField(max_length=100, blank=True)
 
     def __str__(self):
         return self.name
+    
+    def save(self, *args, **kwargs):
+        
+        if self.name:
+            self.responsible = self.name.split()[0].lower()
+        super().save(*args, **kwargs)
 
 
 class Personnel(models.Model):

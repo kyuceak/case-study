@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.models import User
-from .models import Team
+from .models import Team, Part
 
 
 class RegisterForm(forms.ModelForm):
@@ -20,3 +20,10 @@ class LoginForm(forms.Form):
     password = forms.CharField(
         widget=forms.PasswordInput(attrs={"class": "form-control", "placeholder": "Password"}),
     )
+
+
+
+class PartForm(forms.ModelForm):
+    class Meta:
+        model = Part
+        fields = ['type', 'aircraft']

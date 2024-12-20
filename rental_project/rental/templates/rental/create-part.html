@@ -1,0 +1,143 @@
+{% extends 'rental/base.html' %}
+
+{% block title %}
+    Create Parts Page
+{% endblock title %}
+
+{% block content %}
+{% include 'rental/navbar.html' %}
+<div class="container mx-auto py-6">
+    <h1 class="text-2xl font-bold mb-4">Create Part</h1>
+
+    
+    <div class="max-w-lg mx-auto bg-white p-6 rounded-lg shadow-md">
+        <div id="error-messages" class="mb-4 hidden">
+            <div class="text-red-500 text-sm font-medium"></div>
+        </div>
+
+        <form id="create-part-form" class="flex flex-col gap-8">
+            
+            <div class="flex flex-col">
+                <label for="id_type" class="text-sm font-medium text-gray-700">Part Type</label>
+                <select id="id_type" name="type" class="w-full px-3 py-2 border rounded-md border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="Wing">Wing</option>
+                    <option value="Fuselage">Fuselage</option>
+                    <option value="Tail">Tail</option>
+                    <option value="Avionics">Avionics</option>
+                </select>
+            </div>
+
+            
+            <div class="flex flex-col">
+                <label for="id_aircraft" class="text-sm font-medium text-gray-700">Aircraft</label>
+                <select id="id_aircraft" name="aircraft" class="w-full px-3 py-2 border rounded-md border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="TB2">TB2</option>
+                    <option value="TB3">TB3</option>
+                    <option value="AKINCI">AKINCI</option>
+                    <option value="KIZILELMA">KIZILELMA</option>
+                </select>
+            </div>
+
+            
+            <button type="button" id="create-part-button" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-md">
+                Create Part
+            </button>
+        </form>
+    </div>
+
+    
+    <h2 class="text-xl font-bold mt-8 mb-4">Existing Parts</h2>
+    <table class="table-auto w-full border-collapse border border-gray-300">
+        <thead>
+            <tr>
+                <th class="border px-4 py-2">Type</th>
+                <th class="border px-4 py-2">Aircraft</th>
+                <th class="border px-4 py-2">Actions</th>
+            </tr>
+        </thead>
+        <tbody id="parts-table-body">
+            
+        </tbody>
+    </table>
+</div>
+
+<script>
+    const partsApiUrl = '/api/parts/'; //  API endpoint for parts
+
+    // Load parts from API
+    function loadParts() {
+        fetch(partsApiUrl)
+            .then(response => response.json())
+            .then(data => {
+                const tableBody = document.getElementById('parts-table-body');
+                tableBody.innerHTML = ''; // Clear existing rows
+                data.forEach(part => {
+                    const row = `
+                        <tr>
+                            <td class="border px-4 py-2">${part.type}</td>
+                            <td class="border px-4 py-2">${part.aircraft}</td>
+                            <td class="border px-4 py-2">
+                                <button class="bg-red-500 hover:bg-red-600 text-white py-1 px-2 rounded-md" onclick="deletePart(${part.id})">
+                                    Delete
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                    tableBody.innerHTML += row;
+                });
+            })
+            .catch(error => console.error('Error fetching parts:', error));
+    }
+
+    // Create a new part
+    document.getElementById('create-part-button').addEventListener('click', () => {
+        const type = document.getElementById('id_type').value;
+        const aircraft = document.getElementById('id_aircraft').value;
+      
+
+        fetch(partsApiUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}',
+            },
+            body: JSON.stringify({ type, aircraft, team }),
+        })
+        .then(response => {
+            if (response.ok) {
+                loadParts(); // Reload parts list
+                alert('Part created successfully!');
+            } else {
+                response.json().then(data => {
+                    const errorMessages = document.getElementById('error-messages');
+                    errorMessages.classList.remove('hidden');
+                    errorMessages.innerHTML = `<div class="text-red-500 text-sm font-medium">${data.detail || 'Error creating part.'}</div>`;
+                });
+            }
+        })
+        .catch(error => console.error('Error creating part:', error));
+    });
+
+    // Delete a part
+    function deletePart(partId) {
+        fetch(`${partsApiUrl}${partId}/`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+            },
+        })
+        .then(response => {
+            if (response.ok) {
+                loadParts(); // Reload parts list
+                alert('Part deleted successfully!');
+            } else {
+                alert('Error deleting part.');
+            }
+        })
+        .catch(error => console.error('Error deleting part:', error));
+    }
+
+    // Initialize parts list
+    loadParts();
+</script>
+{% endblock content %}
