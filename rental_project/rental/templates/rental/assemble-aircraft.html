@@ -1,0 +1,172 @@
+{% extends 'rental/base.html' %}
+
+{% block title %}
+    Assemble Aircraft Page
+{% endblock title %}
+
+
+
+{% block content %}
+
+{% include "rental/navbar.html"%}
+
+<div class="min-h-screen flex bg-white items-center justify-center">
+    <div class="max-w-5xl w-full bg-white rounded-lg shadow-md p-6 grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Check Parts Section -->
+        <div>
+            <h2 class="text-2xl font-bold text-black mb-4">Check Available Parts</h2>
+            
+            <form id="aircraft-form" class="flex flex-col gap-4">
+                {% csrf_token %}
+                <label for="aircraft-name" class="text-sm font-medium text-gray-700">Choose Aircraft</label>
+                <select id="aircraft-name" name="aircraft_name" class="w-full px-3 py-2 border rounded-md">
+                    {% for value, label in aircraft_choices %}
+                        <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+                <button type="button" id="fetch-parts" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-md">
+                    Check Parts
+                </button>
+            </form>
+
+            <!-- Available Parts -->
+            <div id="parts-container" class="mt-6 hidden">
+                <h3 class="text-xl font-bold text-black mb-4">Available Parts</h3>
+                <ul id="parts-list" class="list-disc pl-6"></ul>
+            </div>
+        </div>
+
+        <!-- Assemble Aircraft Section -->
+        <div>
+            <h2 class="text-2xl font-bold text-black mb-4">Assemble Aircraft</h2>
+            
+            <!-- Messages Container -->
+            <div id="django-messages" class="text-red-700"></div>
+
+            <form id="assemble-aircraft-form" class="flex flex-col gap-4">
+                {% csrf_token %}
+                <label for="assemble-aircraft-name" class="text-sm font-medium text-gray-700">Choose Aircraft to Assemble</label>
+                <select id="assemble-aircraft-name" name="aircraft_name" class="w-full px-3 py-2 border rounded-md">
+                    {% for value, label in aircraft_choices %}
+                        <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+                <button type="button" id="assemble-button" class="bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-md">
+                    Assemble Aircraft
+                </button>
+            </form>
+
+            <!-- Assembly Result -->
+            <div id="assembly-result" class="mt-6 hidden">
+                <h3 class="text-xl font-bold text-black mb-4">Assembly Result</h3>
+                <p id="assembly-message" class="text-green-500 font-medium"></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    // Check Parts Logic
+    document.getElementById('fetch-parts').addEventListener('click', () => {
+        const aircraftName = document.getElementById('aircraft-name').value;
+        const partsContainer = document.getElementById('parts-container');
+        const partsList = document.getElementById('parts-list');
+
+        // Clear previous results
+        partsList.innerHTML = '';
+        partsContainer.classList.add('hidden');
+
+        // Fetch available parts from the API
+        fetch(`/api/parts/?aircraft=${aircraftName}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to fetch parts.');
+                }
+                return response.json();
+            })
+            .then(data => {
+                const partsCount = {
+                    Wing: 0,
+                    Fuselage: 0,
+                    Tail: 0,
+                    Avionics: 0,
+                };
+
+                // Count parts by type
+                data.forEach(part => {
+                    if (!part.is_assembled) {
+                        partsCount[part.type]++;
+                    }
+                });
+
+                // Render part counts in the template
+                for (const [partType, count] of Object.entries(partsCount)) {
+                    const listItem = document.createElement('li');
+                    listItem.innerHTML = `<strong>${partType}</strong>: ${count} available`;
+                    partsList.appendChild(listItem);
+                }
+
+                partsContainer.classList.remove('hidden');
+            })
+            .catch(error => {
+                console.error('Error fetching parts:', error);
+                alert('Failed to fetch parts. Please try again.');
+            });
+    });
+
+    // Assemble Aircraft Logic
+    document.getElementById('assemble-button').addEventListener('click', () => {
+        const aircraftName = document.getElementById('assemble-aircraft-name').value;
+    
+        fetch('/api/assemble-aircraft/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}',
+            },
+            body: JSON.stringify({ name: aircraftName }),
+        })
+        .then(response => {
+            if (!response.ok) {
+                // Handle 400 error for missing parts
+                if (response.status === 400) {
+                    return response.json().then(data => {
+                        const message = data.detail || 'An error occurred while assembling the aircraft.';
+                        displayMessage(message, 'error'); // Use custom function to display the message
+                        throw new Error(message);
+                    });
+                } else {
+                    throw new Error('Failed to assemble aircraft.');
+                }
+            }
+            return response.json();
+        })
+        .then(data => {
+            alert(`Successfully assembled: ${data.name}`);
+            location.reload(); // Reload to update available parts
+            const messagesContainer = document.getElementById('django-messages');
+            
+
+        })
+        .catch(error => {
+            console.error('Error assembling aircraft:', error);
+        });
+    });
+    
+    // Function to display error message from the api response
+    function displayMessage(message, level) {
+        const messagesContainer = document.getElementById('django-messages');
+        const messageElement = document.createElement('div');
+        messagesContainer.innerHTML = '';
+        messageElement.className = `alert alert-${level} py-2 px-4 text-red-700 rounded-md mb-4`;
+        messageElement.textContent = message;
+    
+        messagesContainer.appendChild(messageElement);
+    
+       
+        
+    }
+</script>
+
+{% endblock content %}

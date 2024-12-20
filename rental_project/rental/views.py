@@ -1,18 +1,18 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import Personnel
+from .models import Personnel, Aircraft
 from django.contrib.auth.models import User
 from django.http import HttpResponseRedirect
 from django.contrib import messages
 from django.contrib.auth import authenticate, login as authenticated_login, logout
 from django.contrib.auth.decorators import login_required
 from .forms import RegisterForm, LoginForm, PartForm
-from .models import Part
-from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
-from .models import Part
-from .serializers import PartSerializer
+from .models import Part, AIRCRAFT_CHOICES
+from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView,ListAPIView
+from .serializers import PartSerializer, AircraftSerializer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.views import APIView
 
 
 
@@ -84,32 +84,21 @@ def index(request):
 
 @login_required(login_url="/login")
 def create_parts(request):
- 
-    return render(request, "rental/create-part.html")
+  
+    form = PartForm()
+
+    context = {
+        'form': form,
+    }
+    return render(request, "rental/create-part.html", context)
 
 
 
-
-           
-
-
-@login_required(login_url="/login")
-def list_parts(request):
-    pass
-
-@login_required(login_url="/login")
-def create_aircrafts(request):
-    pass
-
-@login_required(login_url="/login")
-def list_aircrafts(request):
-    pass
 
 @login_required(login_url="/login")
 def logout_view(request):
     logout(request)
     return HttpResponseRedirect("/login")
-
 class PartListCreateAPIView(ListCreateAPIView):
     queryset = Part.objects.all()
     serializer_class = PartSerializer
@@ -117,18 +106,18 @@ class PartListCreateAPIView(ListCreateAPIView):
 
     def create(self, request, *args, **kwargs):
 
-        # Create a mutable copy of the request data
+        # create a mutable copy
         data = request.data.copy()
+        print(data)
 
-        # Add the user's team to the data
+        # Add the user's team to the created part model
         team = self.request.user.personnel.team
-        data['team'] = team.pk  # Use the team's ID since it's a ForeignKey
+        data['team'] = team.pk  
 
-        # Check if the part type matches the team's responsibility
-        part_type = data.get('type')  
-        print(part_type)
-        print("----")
-        print(team.responsible)
+   
+        part_type = data.get('type')  # Get the part type from the request
+        
+        # Check if the user creating for their own team
         if part_type.lower() != team.responsible:
             return Response(
                 {"detail": f"Your team is only responsible for creating parts of type '{team.responsible}'."},
@@ -137,14 +126,18 @@ class PartListCreateAPIView(ListCreateAPIView):
 
         # Pass the modified data to the serializer
         serializer = self.get_serializer(data=data)
-        serializer.is_valid(raise_exception=True) 
-        self.perform_create(serializer)  
+        serializer.is_valid(raise_exception=True)  # Validate the data
+        self.perform_create(serializer)  # Save the instance
 
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
     def get_queryset(self):
-        # Only return parts for the logged-in user's team
+        
+        aircraft_name = self.request.query_params.get('aircraft', None)
+        if aircraft_name:
+            # Fetch all parts for the aircraft
+            return Part.objects.filter(aircraft=aircraft_name, is_assembled=False)
         team = self.request.user.personnel.team
         return Part.objects.filter(team=team)
 
@@ -157,7 +150,79 @@ class PartDetailAPIView(RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated]
     
     def get_queryset(self):
-        # Ensure users can only retrieve or modify parts belonging to their team
+        # to ensure users only get parts belonging to their team
         team = self.request.user.personnel.team
         return Part.objects.filter(team=team)
+
+
+
+@login_required(login_url="/login")
+def assemble_aircraft(request):
+
+  
+
+
+    context = {
+        "aircraft_choices": AIRCRAFT_CHOICES,
+    }
     
+
+    return render(request, "rental/assemble-aircraft.html", context)
+
+
+
+
+
+class AircraftAPIView(APIView):
+    def post(self, request):
+        data = request.data
+        print("Request data:", data)  # Debugging log
+        aircraft_name = data.get("name")
+        print("Aircraft name:", aircraft_name)
+
+
+
+        wing = Part.objects.filter(type="Wing", aircraft=aircraft_name, is_assembled=False).first()
+        fuselage = Part.objects.filter(type="Fuselage", aircraft=aircraft_name, is_assembled=False).first()
+        tail = Part.objects.filter(type="Tail", aircraft=aircraft_name, is_assembled=False).first()
+        avionics = Part.objects.filter(type="Avionics", aircraft=aircraft_name, is_assembled=False).first()
+
+        print("Parts fetched:", wing, fuselage, tail, avionics)  # Debugging log
+
+        if not wing or not fuselage or not tail or not avionics:
+            return Response(
+            {"detail": "One or more required parts are missing for this aircraft."},
+            status=status.HTTP_400_BAD_REQUEST,)   
+        
+        wing.is_assembled = True
+        fuselage.is_assembled = True
+        tail.is_assembled = True
+        avionics.is_assembled = True
+
+        wing.save()
+        fuselage.save()
+        tail.save()
+        avionics.save()
+
+        created_aircraft = Aircraft.objects.create(
+            name=aircraft_name,
+            wing=wing,
+            fuselage=fuselage,
+            tail=tail,
+            avionics=avionics
+        )
+        serializer = AircraftSerializer(created_aircraft)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+    def get(self,request):
+
+        created_aircrafts = Aircraft.objects.all()
+        serializer = AircraftSerializer(created_aircrafts, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+   
+
+       
+@login_required(login_url="/login")
+def list_aircrafts(request):
+    return render(request,"rental/list-aircraft.html")

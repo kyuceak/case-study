@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.models import User
-from .models import Team, Part
+from .models import Team, Part, AIRCRAFT_CHOICES
 
 
 class RegisterForm(forms.ModelForm):
@@ -27,3 +27,4 @@ class PartForm(forms.ModelForm):
     class Meta:
         model = Part
         fields = ['type', 'aircraft']
+

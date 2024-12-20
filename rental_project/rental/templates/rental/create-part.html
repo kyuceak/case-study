@@ -76,9 +76,9 @@
                         <tr>
                             <td class="border px-4 py-2">${part.type}</td>
                             <td class="border px-4 py-2">${part.aircraft}</td>
-                            <td class="border px-4 py-2">
+                            <td class="border px-4 py-2 flex justify-center items-center">
                                 <button class="bg-red-500 hover:bg-red-600 text-white py-1 px-2 rounded-md" onclick="deletePart(${part.id})">
-                                    Delete
+                                    Recycle
                                 </button>
                             </td>
                         </tr>
@@ -93,7 +93,7 @@
     document.getElementById('create-part-button').addEventListener('click', () => {
         const type = document.getElementById('id_type').value;
         const aircraft = document.getElementById('id_aircraft').value;
-      
+        const team = ""
 
         fetch(partsApiUrl, {
             method: 'POST',

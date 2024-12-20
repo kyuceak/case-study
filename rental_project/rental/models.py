@@ -62,11 +62,6 @@ class Part(models.Model):
     
 class Aircraft(models.Model):
 
-    
-
-
-
-
     name = models.CharField(max_length=100, choices=AIRCRAFT_CHOICES)
     wing = models.ForeignKey(Part, on_delete=models.CASCADE, related_name='wing', null=True)
     fuselage = models.ForeignKey(Part, on_delete=models.CASCADE, related_name='fuselage', null=True)
