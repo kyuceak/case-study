@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.auth.models import User
 
 # Create your models here.
 class Team(models.Model):
@@ -9,12 +10,11 @@ class Team(models.Model):
 
 
 class Personnel(models.Model):
-    name = models.CharField(max_length=100)
+    user = models.OneToOneField(User, on_delete=models.CASCADE,null=True)
     team = models.ForeignKey(Team, on_delete=models.PROTECT)
 
     def __str__(self):
-        return self.name
-    
+        return self.user.username
 
 
 
