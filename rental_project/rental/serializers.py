@@ -1,7 +1,12 @@
 from rest_framework import serializers
-from .models import Part, Aircraft
+from .models import Part, Aircraft, Team
 
 
+
+
+
+
+# using ModelSerializer to convert model instances into json
 
 class PartSerializer(serializers.ModelSerializer):
     class Meta:
@@ -17,3 +22,8 @@ class AircraftSerializer(serializers.ModelSerializer):
 
 
 
+
+class TeamSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Team
+        fields = ['id', 'name']

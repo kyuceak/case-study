@@ -8,6 +8,8 @@
 
 {% include "rental/navbar.html" %}
 
+
+    <!-- assembled aircraft list table -->
 <div class="min-h-screen flex items-center justify-center bg-gray-100 py-10">
     <div class="max-w-5xl w-full bg-white rounded-lg shadow-md p-6">
         <h1 class="text-2xl font-bold text-gray-700 mb-6">List of Assembled Aircraft</h1>
@@ -17,14 +19,14 @@
             <thead>
                 <tr>
                     <th class="border px-4 py-2 text-left text-gray-600">Aircraft Name</th>
-                    <th class="border px-4 py-2 text-left text-gray-600">Wing</th>
-                    <th class="border px-4 py-2 text-left text-gray-600">Fuselage</th>
-                    <th class="border px-4 py-2 text-left text-gray-600">Tail</th>
+                    <th class="border px-4 py-2 text-left text-gray-600">Wings</th>
+                    <th class="border px-4 py-2 text-left text-gray-600">Fuselages</th>
+                    <th class="border px-4 py-2 text-left text-gray-600">Tails</th>
                     <th class="border px-4 py-2 text-left text-gray-600">Avionics</th>
                 </tr>
             </thead>
             <tbody id="aircraft-table-body">
-                <!-- Rows will be added when the api responds -->
+                <!-- rows will be added when the api responds -->
             </tbody>
         </table>
     </div>
@@ -35,49 +37,50 @@
         const aircraftTableBody = document.getElementById('aircraft-table-body');
 
         try {
-            // Fetch aircraft data from the API
+            // fetch assembled aircraft db instances from the API
             const aircraftResponse = await fetch('/api/assemble-aircraft/');
             if (!aircraftResponse.ok) {
                 throw new Error('Failed to fetch aircraft data.');
             }
-            const aircraftData = await aircraftResponse.json();
 
+
+            const aircraftData = await aircraftResponse.json();
+            console.log(aircraftData);
+       
+            // for each assembled aircraft fetch their used parts
             for (const aircraft of aircraftData) {
                 const row = document.createElement('tr');
 
-                // Fetch details for each part
-                const wingDetails = aircraft.wing ? await fetchPartDetails(aircraft.wing) : 'N/A';
-                const fuselageDetails = aircraft.fuselage ? await fetchPartDetails(aircraft.fuselage) : 'N/A';
-                const tailDetails = aircraft.tail ? await fetchPartDetails(aircraft.tail) : 'N/A';
-                const avionicsDetails = aircraft.avionics ? await fetchPartDetails(aircraft.avionics) : 'N/A';
+                
+                const partsResponse = await fetch(`/api/parts/?assembled_aircraft=${aircraft.id}`);
+                if (!partsResponse.ok) {
+                    throw new Error('Failed to fetch parts data.');
+                }
+                const partsData = await partsResponse.json()
+
+                // increase for each part used
+                const partsCount = {
+                    Wing: 0,
+                    Fuselage: 0,
+                    Tail: 0,
+                    Avionics: 0
+                };
+                
+                partsData.forEach(part => {
+                    partsCount[part.type]++;
+                });
 
                 row.innerHTML = `
                     <td class="border px-4 py-2 text-gray-700">${aircraft.name}</td>
-                    <td class="border px-4 py-2 text-gray-700">${wingDetails}</td>
-                    <td class="border px-4 py-2 text-gray-700">${fuselageDetails}</td>
-                    <td class="border px-4 py-2 text-gray-700">${tailDetails}</td>
-                    <td class="border px-4 py-2 text-gray-700">${avionicsDetails}</td>
+                    <td class="border px-4 py-2 text-gray-700">${partsCount.Wing} ${aircraft.name} Wing used</td>
+                    <td class="border px-4 py-2 text-gray-700">${partsCount.Fuselage} ${aircraft.name} Fuselage used</td>
+                    <td class="border px-4 py-2 text-gray-700">${partsCount.Tail} ${aircraft.name} Tail used</td>
+                    <td class="border px-4 py-2 text-gray-700">${partsCount.Avionics} ${aircraft.name} Avionics used</td>
                 `;
                 aircraftTableBody.appendChild(row);
             }
         } catch (error) {
             console.error('Error fetching aircraft data:', error);
-            alert('Failed to load aircraft data. Please try again.');
-        }
-
-        //  function to fetch part details by pk
-        async function fetchPartDetails(partId) {
-            try {
-                const partResponse = await fetch(`/api/parts/${partId}/`);
-                if (!partResponse.ok) {
-                    throw new Error('Failed to fetch part details.');
-                }
-                const partData = await partResponse.json();
-                return `${partData.type} (${partData.aircraft})`;
-            } catch (error) {
-                console.error(`Error fetching part details for part ID ${partId}:`, error);
-                return 'N/A';
-            }
         }
     });
 </script>

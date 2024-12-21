@@ -2,18 +2,19 @@ from django.db import models
 from django.contrib.auth.models import User
 
 # Create your models here.
+
+
+
+
+# One to many relation from team to personnel model
 class Team(models.Model):
     name = models.CharField(max_length=100)
-    responsible = models.CharField(max_length=100, blank=True)
+  
 
     def __str__(self):
         return self.name
     
-    def save(self, *args, **kwargs):
-        
-        if self.name:
-            self.responsible = self.name.split()[0].lower()
-        super().save(*args, **kwargs)
+    
 
 
 class Personnel(models.Model):
@@ -37,36 +38,39 @@ AIRCRAFT_CHOICES = [
     (KIZILELMA,"KIZILELMA")
 ]
 
+WING = 'Wing'
+FUSELAGE = 'Fuselage'
+TAIL = 'Tail'
+AVIONICS = 'Avionics'
+
+
+PART_CHOICES = [
+    (WING, 'Wing'),
+    (FUSELAGE, 'Fuselage'),
+    (TAIL, 'Tail'),
+    (AVIONICS, 'Avionics'),
+]
+
+# one to many relation from aircraft to part models (its done by the use of foreign keys)
+class Aircraft(models.Model):
+
+    name = models.CharField(max_length=100, choices=AIRCRAFT_CHOICES)
+
+    
+    def __str__(self):
+        return self.name
+
+
 class Part(models.Model):
-    WING = 'Wing'
-    FUSELAGE = 'Fuselage'
-    TAIL = 'Tail'
-    AVIONICS = 'Avionics'
-
-
-    PART_CHOICES = [
-        (WING, 'Wing'),
-        (FUSELAGE, 'Fuselage'),
-        (TAIL, 'Tail'),
-        (AVIONICS, 'Avionics'),
-    ]
+   
 
 
     type = models.CharField( choices=PART_CHOICES)
-    aircraft = models.CharField(choices=AIRCRAFT_CHOICES)
+    aircraft_type = models.CharField(choices=AIRCRAFT_CHOICES)
+    assembled_aircraft = models.ForeignKey(Aircraft, on_delete=models.PROTECT, null=True, blank=True)  # Tracks which aircraft the part is assigned to
     team = models.ForeignKey(Team, on_delete=models.PROTECT)
     is_assembled = models.BooleanField(default=False)
 
     def __str__(self):
-        return f"{self.aircraft} {self.type}"
+        return f"{self.aircraft_type} {self.type}"
     
-class Aircraft(models.Model):
-
-    name = models.CharField(max_length=100, choices=AIRCRAFT_CHOICES)
-    wing = models.ForeignKey(Part, on_delete=models.CASCADE, related_name='wing', null=True)
-    fuselage = models.ForeignKey(Part, on_delete=models.CASCADE, related_name='fuselage', null=True)
-    tail = models.ForeignKey(Part, on_delete=models.CASCADE, related_name='tail', null=True)
-    avionics = models.ForeignKey(Part, on_delete=models.CASCADE, related_name='avionics', null=True)
-
-    def __str__(self):
-        return self.name

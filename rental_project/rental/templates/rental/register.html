@@ -1,10 +1,6 @@
-{% extends "rental/base.html"%}
+{% extends "rental/base.html" %}
 
-{% block title %}
-Register Page
-{% endblock %}
-
-
+{% block title %}Register Page{% endblock %}
 
 {% block content %}
 <div class="min-h-screen w-full flex items-center justify-center bg-gray-100 dark:bg-gray-900">
@@ -13,19 +9,28 @@ Register Page
         <form method="POST" class="w-full flex flex-col gap-4">
             {% csrf_token %}
             
+            <!-- username input-->
             <div class="flex flex-col">
                 <label for="id_username" class="text-lg text-gray-700 dark:text-gray-200">Username:</label>
-                {{ form.username }}
+                <input type="text" name="username" id="id_username"
+                    class="w-full px-3 py-2 rounded-md border border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Enter your username">
             </div>
 
+            <!-- password input -->
             <div class="flex flex-col">
-                <label for="id_password1" class="text-lg text-gray-700 dark:text-gray-200">Password:</label>
-                {{ form.password }}
+                <label for="id_password" class="text-lg text-gray-700 dark:text-gray-200">Password:</label>
+                <input type="password" name="password" id="id_password"
+                    class="w-full px-3 py-2 rounded-md border border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Enter your password">
             </div>
 
+            <!-- team input -->
             <div class="flex flex-col">
                 <label for="id_team" class="text-lg text-gray-700 dark:text-gray-200">Team:</label>
-                {{ form.team }}
+                <select name="team" id="id_team"
+                        class="w-full px-3 py-2 rounded-md border border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </select>
             </div>
 
             <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-md shadow-sm">
@@ -39,6 +44,22 @@ Register Page
         </div>
     </div>
 </div>
-{% endblock  %}
-    
 
+<script>
+    // fetch the team from api and fill the team selection
+    document.addEventListener('DOMContentLoaded', function () {
+        fetch('/api/teams/')
+            .then(response => response.json())
+            .then(data => {
+                const select = document.getElementById('id_team');
+                data.forEach(team => {
+                    const option = document.createElement('option');
+                    option.value = team.id;
+                    option.textContent = team.name;
+                    select.appendChild(option);
+                });
+            })
+            .catch(error => console.error('Error fetching teams:', error));
+    });
+</script>
+{% endblock %}

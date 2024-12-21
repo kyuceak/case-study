@@ -4,15 +4,13 @@
     Assemble Aircraft Page
 {% endblock title %}
 
-
-
 {% block content %}
 
 {% include "rental/navbar.html"%}
 
 <div class="min-h-screen flex bg-white items-center justify-center">
     <div class="max-w-5xl w-full bg-white rounded-lg shadow-md p-6 grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <!-- Check Parts Section -->
+        <!-- check available parts section -->
         <div>
             <h2 class="text-2xl font-bold text-black mb-4">Check Available Parts</h2>
             
@@ -29,20 +27,23 @@
                 </button>
             </form>
 
-            <!-- Available Parts -->
+            <!-- Available Parts List -->
             <div id="parts-container" class="mt-6 hidden">
                 <h3 class="text-xl font-bold text-black mb-4">Available Parts</h3>
                 <ul id="parts-list" class="list-disc pl-6"></ul>
             </div>
         </div>
 
-        <!-- Assemble Aircraft Section -->
+  
+        <!-- Assemble Aircraft section -->
         <div>
             <h2 class="text-2xl font-bold text-black mb-4">Assemble Aircraft</h2>
             
-            <!-- Messages Container -->
-            <div id="django-messages" class="text-red-700"></div>
+            <!-- error message section -->
+            <div id="django-messages" class="text-red-700 mb-4"></div>
 
+
+            <!-- Aircraft type selection -->
             <form id="assemble-aircraft-form" class="flex flex-col gap-4">
                 {% csrf_token %}
                 <label for="assemble-aircraft-name" class="text-sm font-medium text-gray-700">Choose Aircraft to Assemble</label>
@@ -51,6 +52,20 @@
                         <option value="{{ value }}">{{ label }}</option>
                     {% endfor %}
                 </select>
+
+                <!-- part count input for each type -->
+                <label for="wing-count" class="text-sm font-medium text-gray-700">Wings Count</label>
+                <input type="number" id="wing-count" name="wing_count" value="1" min="1" class="w-full px-3 py-2 border rounded-md">
+
+                <label for="fuselage-count" class="text-sm font-medium text-gray-700">Fuselage Count</label>
+                <input type="number" id="fuselage-count" name="fuselage_count" value="1" min="1" class="w-full px-3 py-2 border rounded-md">
+
+                <label for="tail-count" class="text-sm font-medium text-gray-700">Tail Count</label>
+                <input type="number" id="tail-count" name="tail_count" value="1" min="1" class="w-full px-3 py-2 border rounded-md">
+
+                <label for="avionics-count" class="text-sm font-medium text-gray-700">Avionics Count</label>
+                <input type="number" id="avionics-count" name="avionics_count" value="1" min="1" class="w-full px-3 py-2 border rounded-md">
+
                 <button type="button" id="assemble-button" class="bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-md">
                     Assemble Aircraft
                 </button>
@@ -58,7 +73,6 @@
 
             <!-- Assembly Result -->
             <div id="assembly-result" class="mt-6 hidden">
-                <h3 class="text-xl font-bold text-black mb-4">Assembly Result</h3>
                 <p id="assembly-message" class="text-green-500 font-medium"></p>
             </div>
         </div>
@@ -93,14 +107,14 @@
                     Avionics: 0,
                 };
 
-                // Count parts by type
+                // count parts by part type
                 data.forEach(part => {
                     if (!part.is_assembled) {
                         partsCount[part.type]++;
                     }
                 });
 
-                // Render part counts in the template
+                // show available parts in the page
                 for (const [partType, count] of Object.entries(partsCount)) {
                     const listItem = document.createElement('li');
                     listItem.innerHTML = `<strong>${partType}</strong>: ${count} available`;
@@ -115,25 +129,52 @@
             });
     });
 
-    // Assemble Aircraft Logic
+    // assemble aircraft js 
     document.getElementById('assemble-button').addEventListener('click', () => {
         const aircraftName = document.getElementById('assemble-aircraft-name').value;
-    
+        const wingCount = document.getElementById('wing-count').value;
+        const fuselageCount = document.getElementById('fuselage-count').value;
+        const tailCount = document.getElementById('tail-count').value;
+        const avionicsCount = document.getElementById('avionics-count').value;
+
         fetch('/api/assemble-aircraft/', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRFToken': '{{ csrf_token }}',
             },
-            body: JSON.stringify({ name: aircraftName }),
+            body: JSON.stringify({
+                name: aircraftName,
+                wing_count: wingCount,
+                fuselage_count: fuselageCount,
+                tail_count: tailCount,
+                avionics_count: avionicsCount
+            }),
         })
         .then(response => {
             if (!response.ok) {
-                // Handle 400 error for missing parts
-                if (response.status === 400) {
+                if (response.status === 400 || response.status === 403) {
                     return response.json().then(data => {
-                        const message = data.detail || 'An error occurred while assembling the aircraft.';
-                        displayMessage(message, 'error'); // Use custom function to display the message
+                        console.log("geldim")
+                        let missing_part_message = "<ul>";  
+                        let message = ""
+                        if (data.detail){
+                            message = data.detail
+                        }  else{
+                            console.log("geldim2")
+                        data.missing_parts.forEach(message => {
+                            missing_part_message += `<li>${message}</li>`;
+                        });
+                        missing_part_message += "</ul>";
+                        
+                         message = missing_part_message || 'An error occurred while assembling the aircraft.';
+
+                        }
+                   
+                        
+                      
+                        
+                        displayMessage(message, 'error');
                         throw new Error(message);
                     });
                 } else {
@@ -143,29 +184,20 @@
             return response.json();
         })
         .then(data => {
-            alert(`Successfully assembled: ${data.name}`);
-            location.reload(); // Reload to update available parts
-            const messagesContainer = document.getElementById('django-messages');
-            
-
+            const assemblyResult = document.getElementById('assembly-result');
+            const assemblyMessage = document.getElementById('assembly-message');
+            assemblyMessage.textContent = `Successfully assembled: ${data.name}`;
+            assemblyResult.classList.remove('hidden');
         })
         .catch(error => {
             console.error('Error assembling aircraft:', error);
         });
     });
     
-    // Function to display error message from the api response
+    // Function to display error message if any part is missing
     function displayMessage(message, level) {
         const messagesContainer = document.getElementById('django-messages');
-        const messageElement = document.createElement('div');
-        messagesContainer.innerHTML = '';
-        messageElement.className = `alert alert-${level} py-2 px-4 text-red-700 rounded-md mb-4`;
-        messageElement.textContent = message;
-    
-        messagesContainer.appendChild(messageElement);
-    
-       
-        
+        messagesContainer.innerHTML = message;
     }
 </script>
 

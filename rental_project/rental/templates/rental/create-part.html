@@ -15,6 +15,7 @@
             <div class="text-red-500 text-sm font-medium"></div>
         </div>
 
+             <!-- create parts section -->
         <form id="create-part-form" class="flex flex-col gap-8">
             
             <div class="flex flex-col">
@@ -45,7 +46,7 @@
         </form>
     </div>
 
-    
+     <!-- existing parts table -->
     <h2 class="text-xl font-bold mt-8 mb-4">Existing Parts</h2>
     <table class="table-auto w-full border-collapse border border-gray-300">
         <thead>
@@ -70,12 +71,12 @@
             .then(response => response.json())
             .then(data => {
                 const tableBody = document.getElementById('parts-table-body');
-                tableBody.innerHTML = ''; // Clear existing rows
+                tableBody.innerHTML = ''; // clear the past data
                 data.forEach(part => {
                     const row = `
                         <tr>
-                            <td class="border px-4 py-2">${part.type}</td>
-                            <td class="border px-4 py-2">${part.aircraft}</td>
+                            <td class="border px-4 py-2 text-center">${part.type}</td>
+                            <td class="border px-4 py-2 text-center">${part.aircraft_type}</td>
                             <td class="border px-4 py-2 flex justify-center items-center">
                                 <button class="bg-red-500 hover:bg-red-600 text-white py-1 px-2 rounded-md" onclick="deletePart(${part.id})">
                                     Recycle
@@ -89,10 +90,10 @@
             .catch(error => console.error('Error fetching parts:', error));
     }
 
-    // Create a new part
+    // create new part logic
     document.getElementById('create-part-button').addEventListener('click', () => {
         const type = document.getElementById('id_type').value;
-        const aircraft = document.getElementById('id_aircraft').value;
+        const aircraft_type = document.getElementById('id_aircraft').value;
         const team = ""
 
         fetch(partsApiUrl, {
@@ -101,12 +102,12 @@
                 'Content-Type': 'application/json',
                 'X-CSRFToken': '{{ csrf_token }}',
             },
-            body: JSON.stringify({ type, aircraft, team }),
+            body: JSON.stringify({ type, aircraft_type, team }),
         })
         .then(response => {
             if (response.ok) {
-                loadParts(); // Reload parts list
-                alert('Part created successfully!');
+                loadParts(); // after new part added reload the existing parts
+                
             } else {
                 response.json().then(data => {
                     const errorMessages = document.getElementById('error-messages');
@@ -118,7 +119,7 @@
         .catch(error => console.error('Error creating part:', error));
     });
 
-    // Delete a part
+    // delete part logic
     function deletePart(partId) {
         fetch(`${partsApiUrl}${partId}/`, {
             method: 'DELETE',
@@ -128,16 +129,14 @@
         })
         .then(response => {
             if (response.ok) {
-                loadParts(); // Reload parts list
-                alert('Part deleted successfully!');
-            } else {
-                alert('Error deleting part.');
-            }
+                loadParts(); // after deletion reload again
+              
+            } 
         })
         .catch(error => console.error('Error deleting part:', error));
     }
 
-    // Initialize parts list
+    // initialize parts list
     loadParts();
 </script>
 {% endblock content %}

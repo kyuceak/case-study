@@ -1,7 +1,7 @@
 from django.urls import path
 from . import views
-
-from .views import PartDetailAPIView, PartListCreateAPIView, AircraftAPIView
+from rest_framework.authtoken.views import obtain_auth_token
+from .views import PartDetailAPIView, PartListCreateAPIView, AircraftAPIView, TeamListAPIView
 
 urlpatterns = [
     path("", views.index, name="index"),
@@ -14,4 +14,5 @@ urlpatterns = [
     path('api/parts/', PartListCreateAPIView.as_view(), name='part_list_create'),
     path('api/parts/<int:pk>/', PartDetailAPIView.as_view(), name='part_detail'),
     path("api/assemble-aircraft/", AircraftAPIView.as_view(), name="assemble_aircraft"),
+    path('api/teams/', TeamListAPIView.as_view(), name='api-teams')
 ]
