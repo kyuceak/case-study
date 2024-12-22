@@ -82,8 +82,8 @@ PostgreSQL
 
 1. Clone the Repository:
 
-`git clone https://github.com/username/aircraft-management-system.git
-cd aircraft-management-system`
+`git clone https://github.com/kyuceak/case-study.git
+cd rental_project`
 
 2. Configure Environment Variables:
 - Create a .env file and provide the following details:
