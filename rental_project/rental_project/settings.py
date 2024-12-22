@@ -24,11 +24,13 @@ from decouple import config
 SECRET_KEY = config('SECRET_KEY', default='secret_key')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = getenv("IS_DEVELOPMENT",True)
-
+DEBUG = config('IS_DEVELOPMENT', True)
 ALLOWED_HOSTS = [
     getenv("APP_HOST"),
-   "127.0.0.1"
+   "127.0.0.1",
+   'db',
+   "localhost",
+   "0.0.0.0"
 ]
 
 
@@ -48,6 +50,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -85,11 +88,11 @@ WSGI_APPLICATION = 'rental_project.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'postgres',
+        'NAME': config('DB_NAME', default='postgres'),
         'USER': config('DB_USER', default='user'),
         'PASSWORD': config('DB_PASSWORD', default='password'),
-        'HOST': 'localhost',
-        'PORT': '5432'
+        'HOST':"db", # Use 'db' for Docker
+        'PORT': config('DB_PORT', default='5432'),
     }
 }
 
@@ -128,8 +131,14 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
+
 STATIC_ROOT = BASE_DIR / "staticfiles" # for prod
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+
+STATICFILES_DIRS = [BASE_DIR / "static"]
+   
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
@@ -137,14 +146,3 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
-# TAILWIND CSS
-
-COMPRESS_ROOT = BASE_DIR / 'static'
- 
-COMPRESS_ENABLED = True
- 
-STATICFILES_FINDERS = [
-    'django.contrib.staticfiles.finders.FileSystemFinder',
-    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
-    'compressor.finders.CompressorFinder',
-]

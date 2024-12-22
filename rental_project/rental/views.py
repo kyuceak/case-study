@@ -279,6 +279,7 @@ def list_aircrafts(request):
 
 
     if( team_name != "assembly"):
+       messages.warning(request, "You are not an assembly team member.")
        return  HttpResponseRedirect("/create-parts")
     
 
