@@ -6,26 +6,6 @@ from django.contrib.auth.models import User
 
 
 
-# One to many relation from team to personnel model
-class Team(models.Model):
-    name = models.CharField(max_length=100)
-  
-
-    def __str__(self):
-        return self.name
-    
-    
-
-
-class Personnel(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE,null=True)
-    team = models.ForeignKey(Team, on_delete=models.PROTECT)
-
-    def __str__(self):
-        return self.user.username
-
-
-
 TB2 = "TB2"
 TB3 = "TB3"
 AKINCI = "AKINCI"
@@ -51,20 +31,31 @@ PART_CHOICES = [
     (AVIONICS, 'Avionics'),
 ]
 
+# One to many relation from team to personnel model
+
+class Team(models.Model):
+    name = models.CharField(max_length=100)
+  
+    def __str__(self):
+        return self.name
+    
+class Personnel(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE,null=True)
+    team = models.ForeignKey(Team, on_delete=models.PROTECT)
+
+    def __str__(self):
+        return self.user.username
+    
 # one to many relation from aircraft to part models (its done by the use of foreign keys)
 class Aircraft(models.Model):
 
     name = models.CharField(max_length=100, choices=AIRCRAFT_CHOICES)
 
-    
     def __str__(self):
         return self.name
 
-
 class Part(models.Model):
    
-
-
     type = models.CharField( choices=PART_CHOICES)
     aircraft_type = models.CharField(choices=AIRCRAFT_CHOICES)
     assembled_aircraft = models.ForeignKey(Aircraft, on_delete=models.PROTECT, null=True, blank=True)  # Tracks which aircraft the part is assigned to

@@ -37,18 +37,12 @@ def register(request):
             # create the personnel with user and team fields added
             Personnel.objects.create(user=user, team=team)
 
-           
-            
-
             messages.success(request, "Your account has been created successfully.")
             return redirect('login')  
         else:
             messages.error(request, "Please fill all fields correctly.")
 
     return render(request, "rental/register.html")
-
-
-
 
 def login(request):
     if request.method == 'POST':
@@ -72,23 +66,18 @@ def login(request):
 @login_required(login_url="/login")
 def index(request):
 
-    
-    context = {'user': request.user}
     return HttpResponseRedirect("/create-parts")
-
-
 
 @login_required(login_url="/login")
 def create_parts(request):
   
     return render(request, "rental/create-part.html")
 
-
-
-
 @login_required(login_url="/login")
 def logout_view(request):
+
     logout(request)
+
     return HttpResponseRedirect("/login")
 class PartListCreateAPIView(ListCreateAPIView):
     queryset = Part.objects.all()
@@ -96,10 +85,9 @@ class PartListCreateAPIView(ListCreateAPIView):
     permission_classes = [IsAuthenticated]
 
     def create(self, request, *args, **kwargs):
-
         # create a mutable copy (because we are going to set the team field)
         data = request.data.copy()
-      
+
         # add the user's team to the created part model
         team = self.request.user.personnel.team
         data['team'] = team.pk  
@@ -129,22 +117,15 @@ class PartListCreateAPIView(ListCreateAPIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-       
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)  
         self.perform_create(serializer)  # save the validated data as a db instance
 
-       
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def get_queryset(self):
-     
         queryset = Part.objects.all()
-        
         aircraft = self.request.query_params.get('aircraft', None)
-        
-        
-
         assembled_aircraft = self.request.query_params.get('assembled_aircraft', None)
         
         # if there is an assembled aircraft param return the corresponding parts ( for list aircraft page)
@@ -162,22 +143,15 @@ class PartListCreateAPIView(ListCreateAPIView):
         team = self.request.user.personnel.team
         return Part.objects.filter(team=team, is_assembled=False)
 
-    
-
 class PartDetailAPIView(RetrieveUpdateDestroyAPIView):
-    
-
     queryset = Part.objects.all()
     serializer_class = PartSerializer
     permission_classes = [IsAuthenticated]
-
 
     # to ensure users can only delete parts belonging to their team
     def get_queryset(self):
         team = self.request.user.personnel.team
         return Part.objects.filter(team=team)
-
-
 
 
 @login_required(login_url="/login")
@@ -188,16 +162,11 @@ def assemble_aircraft(request):
         "aircraft_choices": AIRCRAFT_CHOICES,
     }
     
-
     return render(request, "rental/assemble-aircraft.html", context)
-
-
-
 
 # AircraftAPI to assemble aircrafts
 class AircraftAPIView(APIView):
     permission_classes = [IsAuthenticated]
-
 
     def post(self, request):
 
@@ -213,7 +182,6 @@ class AircraftAPIView(APIView):
     
         data = request.data
      
-
         # fetch the counts from the post data
         aircraft_name = data.get("name")
         wing_count = int(data.get("wing_count", 0))
@@ -226,7 +194,6 @@ class AircraftAPIView(APIView):
         fuselages = Part.objects.filter(type="Fuselage", aircraft_type=aircraft_name, is_assembled=False)[:fuselage_count]
         tails = Part.objects.filter(type="Tail", aircraft_type=aircraft_name, is_assembled=False)[:tail_count]
         avionics = Part.objects.filter(type="Avionics", aircraft_type=aircraft_name, is_assembled=False)[:avionics_count]
-
 
         missing_parts = []
         if len(wings) < wing_count:
@@ -245,7 +212,6 @@ class AircraftAPIView(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
             )
         
-
         created_aircraft = Aircraft.objects.create(name=aircraft_name)
 
         # assign parts to the aircraft and mark them as assembled
@@ -255,36 +221,24 @@ class AircraftAPIView(APIView):
             part.assembled_aircraft = created_aircraft  # assign the aircraft to each part used
             part.save()  
            
-
-        
-        
         serializer = AircraftSerializer(created_aircraft)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     
     def get(self,request):
-
         created_aircrafts = Aircraft.objects.all()
         serializer = AircraftSerializer(created_aircrafts, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
-
-   
-
-       
+ 
 @login_required(login_url="/login")
 def list_aircrafts(request):
-
     team = request.user.personnel.team
-
     team_name = team.name.split()[0].lower()
-
 
     if( team_name != "assembly"):
        messages.warning(request, "You are not an assembly team member.")
        return  HttpResponseRedirect("/create-parts")
     
-
     return render(request,"rental/list-aircraft.html")
-
 
 class TeamListAPIView(generics.ListAPIView):
     queryset = Team.objects.all()
